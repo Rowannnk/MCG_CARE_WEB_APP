@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAppContext } from "../context/AppContext";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -67,12 +68,12 @@ const Login = () => {
         <div className="mt-6 text-center text-sm">
           <p className="text-gray-600">
             Don't have an account?{" "}
-            <a
-              href="/register"
+            <Link
+              to="/register"
               className="text-red-600 hover:text-red-800 font-medium hover:underline"
             >
               Register here
-            </a>
+            </Link>
           </p>
         </div>
       </div>
