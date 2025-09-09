@@ -42,13 +42,11 @@ const UserManagement = () => {
   const [totalFeedbackCount, setTotalFeedbackCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Advanced search filters
   const [technicianSearch, setTechnicianSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // Fetch user data with booking counts
   const fetchUsers = async () => {
     try {
       const response = await axios.get(
@@ -65,7 +63,6 @@ const UserManagement = () => {
     }
   };
 
-  // Fetch feedback data with pagination
   const fetchFeedbacks = async (page = 1, limit = 3) => {
     try {
       const response = await axios.get(
@@ -80,7 +77,6 @@ const UserManagement = () => {
     }
   };
 
-  // Load initial data
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -91,7 +87,6 @@ const UserManagement = () => {
     loadData();
   }, []);
 
-  // Handle page change for feedback
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
@@ -135,7 +130,6 @@ const UserManagement = () => {
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Filter feedbacks based on multiple criteria
   const filteredFeedbacks = feedbacks.filter((feedback) => {
     const matchesTextSearch =
       feedback.userId?.name
@@ -326,7 +320,7 @@ const UserManagement = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <Title text1="Dashboard" text2="Management" />
+        <Title text1="User" text2="Management" />
         <div className="text-sm text-gray-600">
           {activeTab === "users"
             ? `Total: ${users.length} users`

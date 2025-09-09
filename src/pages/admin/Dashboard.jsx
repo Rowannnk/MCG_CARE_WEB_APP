@@ -1,26 +1,19 @@
 import {
-  Award,
-  Brush,
   Calendar,
   ChartLineIcon,
   CheckCircle,
   CircleDollarSignIcon,
-  Droplet,
-  MessageSquareMore,
   Star,
   Target,
   ToolCaseIcon,
-  Trophy,
   User,
   UserCheck,
   UserIcon,
   Wrench,
-  Zap,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Title from "../../components/admin/Title";
-import BlurCircle from "../../components/BlurCircle";
 
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -173,7 +166,6 @@ const Dashboard = () => {
     <>
       <Title text1="Admin" text2="Dashboard" />
       <div className="relative flex flex-wrap gap-4 mt-6">
-        <BlurCircle top="100px" right="100px" />
         <div className="flex flex-wrap gap-4 w-full">
           {dashboardCards.map((card, index) => {
             const Icon = card.icon;
@@ -195,8 +187,6 @@ const Dashboard = () => {
 
       {/* Recent Bookings Section */}
       <div className="relative mt-8 max-w-5xl">
-        <BlurCircle top="100px" left="-10%" />
-
         <h2 className="text-lg font-medium mb-6 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-primary" />
           Recent Service Bookings
@@ -259,8 +249,6 @@ const Dashboard = () => {
                   </span>
                 </div>
               </div>
-
-              {/* View Details button has been removed */}
             </div>
           ))}
         </div>
@@ -274,81 +262,24 @@ const Dashboard = () => {
             Popular Services
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {topServices.map((service, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all"
+                className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all"
               >
-                <div className="flex items-start gap-4">
-                  {(() => {
-                    const icons = [Wrench, Droplet, Brush, Zap];
-                    const colors = [
-                      {
-                        bg: "bg-blue-100",
-                        text: "text-blue-600",
-                        bar: "bg-blue-500",
-                      },
-                      {
-                        bg: "bg-green-100",
-                        text: "text-green-600",
-                        bar: "bg-green-500",
-                      },
-                      {
-                        bg: "bg-purple-100",
-                        text: "text-purple-600",
-                        bar: "bg-purple-500",
-                      },
-                      {
-                        bg: "bg-yellow-100",
-                        text: "text-yellow-600",
-                        bar: "bg-yellow-500",
-                      },
-                    ];
-
-                    const Icon = icons[index % icons.length];
-                    const color = colors[index % colors.length];
-
-                    return (
-                      <>
-                        <div
-                          className={`p-3 rounded-lg ${color.bg} ${color.text}`}
-                        >
-                          <Icon className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold leading-snug break-words">
-                            {formatServiceType(service.name)}
-                          </h3>
-                          <p className="text-2xl font-bold mt-1">
-                            {service.count}{" "}
-                            <span className="text-sm font-normal text-gray-500">
-                              requests
-                            </span>
-                          </p>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-
-                <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${
-                      index === 0
-                        ? "bg-blue-400"
-                        : index === 1
-                        ? "bg-green-400"
-                        : "bg-purple-400"
-                    }`}
-                    style={{
-                      width: `${
-                        (service.count /
-                          Math.max(...topServices.map((s) => s.count))) *
-                        100
-                      }%`,
-                    }}
-                  ></div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-md bg-blue-100 text-blue-600">
+                    <Wrench className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-800">
+                      {formatServiceType(service.name)}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {service.count} requests
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}

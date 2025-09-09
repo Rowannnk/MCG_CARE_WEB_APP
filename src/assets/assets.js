@@ -6,6 +6,7 @@ import slider3 from "./slider3.jpg";
 import googlePlay from "./googlePlay.svg";
 import appStore from "./appStore.svg";
 import profile from "./profile.png";
+import profile1 from "./profile1.png";
 
 export const assets = {
   logo,
@@ -13,6 +14,7 @@ export const assets = {
   googlePlay,
   appStore,
   profile,
+  profile1,
 };
 
 export const dummyAds = [
