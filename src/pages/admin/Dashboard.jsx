@@ -3,6 +3,7 @@ import {
   ChartLineIcon,
   CheckCircle,
   CircleDollarSignIcon,
+  Clock,
   Star,
   Target,
   ToolCaseIcon,
@@ -14,6 +15,7 @@ import {
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Title from "../../components/admin/Title";
+import { Cpu, Smartphone } from "lucide-react";
 
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -95,6 +97,7 @@ const Dashboard = () => {
           jobsCompleted: t.completedServices,
           rating: t.rating,
           points: t.points,
+          upcomingJobs: t.pendingServices,
         }));
         setTechnicianPerformance(mappedTech);
         setError("");
@@ -115,8 +118,8 @@ const Dashboard = () => {
       icon: ChartLineIcon,
     },
     {
-      title: "Total Revenue",
-      value: "$ " + (dashboardData.totalRevenue || 0),
+      title: "Total Revenue (MMK)",
+      value: dashboardData.totalRevenue || 0,
       icon: CircleDollarSignIcon,
     },
     {
@@ -131,11 +134,49 @@ const Dashboard = () => {
     },
   ];
 
+  function buddhistToGregorian(dateStr) {
+    // dateStr like "2568-09-16"
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(`${year - 543}-${month}-${day}`);
+  }
+
   const formatServiceType = (type) => {
     return type
       .split("_")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
+  };
+
+  const getServiceIcon = (serviceName, index) => {
+    // Use index to cycle through 3 different icons
+    const iconIndex = index % 3;
+
+    switch (iconIndex) {
+      case 0:
+        return <Wrench className="w-5 h-5" />;
+      case 1:
+        return <Cpu className="w-5 h-5" />;
+      case 2:
+        return <Smartphone className="w-5 h-5" />;
+      default:
+        return <Wrench className="w-5 h-5" />;
+    }
+  };
+
+  // Helper function to get background color based on index
+  const getServiceIconBg = (index) => {
+    const bgIndex = index % 3;
+
+    switch (bgIndex) {
+      case 0:
+        return "bg-blue-100 text-blue-600";
+      case 1:
+        return "bg-purple-100 text-purple-600";
+      case 2:
+        return "bg-green-100 text-green-600";
+      default:
+        return "bg-blue-100 text-blue-600";
+    }
   };
 
   if (loading) {
@@ -220,7 +261,7 @@ const Dashboard = () => {
                 </span>
 
                 <span className="text-lg font-semibold text-primary">
-                  ${booking.price}
+                  MMK {booking.price}
                 </span>
               </div>
 
@@ -240,12 +281,15 @@ const Dashboard = () => {
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gray-500" />
                   <span>
-                    {new Date(booking.date).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {buddhistToGregorian(booking.date).toLocaleDateString(
+                      "en-US",
+                      {
+                        weekday: "short",
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      }
+                    )}
                   </span>
                 </div>
               </div>
@@ -269,8 +313,8 @@ const Dashboard = () => {
                 className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-md bg-blue-100 text-blue-600">
-                    <Wrench className="w-5 h-5" />
+                  <div className={`p-2 rounded-md ${getServiceIconBg(index)}`}>
+                    {getServiceIcon(service.name, index)}
                   </div>
                   <div>
                     <h3 className="font-medium text-gray-800">
@@ -293,12 +337,15 @@ const Dashboard = () => {
             </h2>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="grid grid-cols-12 bg-gray-50 p-4 border-b border-gray-100">
-                <div className="col-span-5 font-medium text-gray-600">
+              <div className="grid grid-cols-10 bg-gray-50 p-4 border-b border-gray-100">
+                <div className="col-span-4 font-medium text-gray-600">
                   Technician
                 </div>
-                <div className="col-span-3 font-medium text-center text-gray-600">
-                  Jobs Completed
+                <div className="col-span-2 font-medium text-center text-gray-600">
+                  Completed Jobs
+                </div>
+                <div className="col-span-2 font-medium text-center text-gray-600">
+                  Pending Jobs
                 </div>
                 <div className="col-span-2 font-medium text-center text-gray-600">
                   Points
@@ -308,22 +355,39 @@ const Dashboard = () => {
               {technicianPerformance.map((tech, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-12 items-center p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
+                  className="grid grid-cols-10 items-center p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
                 >
-                  <div className="col-span-5 flex items-center gap-3">
+                  <div className="col-span-4 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
                       {tech.name.charAt(0)}
                     </div>
-                    <span className="font-medium">{tech.name}</span>
+                    <div>
+                      <span className="font-medium block">{tech.name}</span>
+                      <span className="text-xs text-gray-500">
+                        {tech.email}
+                      </span>
+                    </div>
                   </div>
-                  <div className="col-span-3 text-center">
-                    <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm">
+
+                  {/* Completed Jobs */}
+                  <div className="col-span-2 text-center">
+                    <div className="inline-flex items-center gap-1 bg-green-50 text-green-600 px-3 py-1 rounded-full text-sm">
                       <CheckCircle className="w-4 h-4" />
                       {tech.jobsCompleted}
                     </div>
                   </div>
+
+                  {/* Pending Jobs */}
                   <div className="col-span-2 text-center">
-                    <div className="inline-flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
+                    <div className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-600 px-3 py-1 rounded-full text-sm">
+                      <Clock className="w-4 h-4" />
+                      {tech.pendingServices || tech.upcomingJobs || 0}
+                    </div>
+                  </div>
+
+                  {/* Points */}
+                  <div className="col-span-2 text-center">
+                    <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm">
                       <Target className="w-4 h-4" />
                       {tech.points}
                     </div>

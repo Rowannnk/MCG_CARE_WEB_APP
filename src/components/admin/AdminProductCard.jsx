@@ -415,7 +415,7 @@ const AdminProductCard = ({ product, onUpdate, onDelete }) => {
               <p className="text-gray-500 text-sm mt-1">{product.brand}</p>
 
               <div className="mt-3 flex justify-between items-center">
-                <span className="font-bold">THB {product.price || "N/A"}</span>
+                <span className="font-bold">MMK {product.price || "N/A"}</span>
                 <span
                   className={`px-2 py-1 rounded-full text-xs ${
                     product.stock > 0

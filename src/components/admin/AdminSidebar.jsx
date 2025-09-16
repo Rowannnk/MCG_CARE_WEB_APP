@@ -7,6 +7,7 @@ import {
   PlusCircleIcon,
   PlusSquareIcon,
   User,
+  LogOutIcon, // Add this import
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -16,6 +17,7 @@ const AdminSidebar = () => {
     lastName: "John",
     imageUrl: assets.profile1,
   };
+
   const adminNavLinks = [
     {
       name: "Dashboard",
@@ -44,6 +46,17 @@ const AdminSidebar = () => {
     },
     { path: "/admin/users", icon: User, name: "User Management" },
   ];
+
+  // Add logout function
+  const handleLogout = () => {
+    // Clear authentication tokens or user data
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    // Redirect to login page or homepage
+    window.location.href = "/login"; // or use navigate if you have react-router setup
+  };
+
   return (
     <div className="h-[calc(100vh-64px)] md:flex flex-col items-center pt-8 max-w-13 md:max-w-60 border-b w-full border-r border-gray-300/80 text-sm">
       <div className="flex flex-col items-center">
@@ -62,7 +75,7 @@ const AdminSidebar = () => {
         <p className="text-xs text-gray-400 max-md:hidden">Administrator</p>
       </div>
 
-      <div className="w-full">
+      <div className="w-full flex-1">
         {adminNavLinks.map((link, index) => (
           <NavLink
             key={index}
@@ -87,6 +100,17 @@ const AdminSidebar = () => {
             )}
           </NavLink>
         ))}
+      </div>
+
+      {/* Logout Button at the bottom with background color */}
+      <div className="w-full mt-auto mb-4 px-2">
+        <button
+          onClick={handleLogout}
+          className="relative flex items-center justify-center md:justify-start gap-2 w-full py-3 md:pl-10 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors border border-red-200"
+        >
+          <LogOutIcon className="w-5 h-5" />
+          <p className="max-md:hidden font-medium">Logout</p>
+        </button>
       </div>
     </div>
   );

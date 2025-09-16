@@ -163,6 +163,11 @@ const ListBooking = () => {
 
     return pageNumbers;
   };
+  function buddhistToGregorian(dateStr) {
+    // dateStr like "2568-09-16"
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(`${year - 543}-${month}-${day}`);
+  }
 
   if (loading) {
     return (
@@ -245,10 +250,13 @@ const ListBooking = () => {
                       </div>
                     </td>
                     <td className="p-4">
-                      {formatDateTime(booking.date, booking.timeSlot)}
+                      {formatDateTime(
+                        buddhistToGregorian(booking.date),
+                        booking.timeSlot
+                      )}
                     </td>
                     <td className="p-4 font-medium">
-                      THB {booking.serviceFee || 0}
+                      MMK {booking.serviceFee || 0}
                     </td>
                   </tr>
                 ))}
