@@ -16,6 +16,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Title from "../../components/admin/Title";
 import { Cpu, Smartphone } from "lucide-react";
+import { format } from "date-fns";
 
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -55,7 +56,7 @@ const Dashboard = () => {
 
         const mappedBookings = recentRes.data.map((b) => ({
           id: b._id,
-          serviceType: b.serviceType,
+          serviceTypes: b.serviceTypes,
           price: b.serviceFee,
           paymentStatus:
             b.paymentStatus === "paid"
@@ -66,6 +67,8 @@ const Dashboard = () => {
           customerName: b.user?.name || "Unknown",
           technician: b.assignedTechnician?.name || null,
           date: b.date,
+          timeSlot: b.timeSlot,
+          serviceEndDate: b.serviceEndDate,
         }));
         setRecentBookings(mappedBookings);
 
@@ -84,6 +87,7 @@ const Dashboard = () => {
           count: s.totalRequests,
         }));
         setTopServices(mappedServices);
+        console.log(topServices);
 
         // Fetch technician performance
         const techRes = await axios.get("/api/booking/technician-stats", {
@@ -134,17 +138,17 @@ const Dashboard = () => {
     },
   ];
 
-  function buddhistToGregorian(dateStr) {
-    // dateStr like "2568-09-16"
-    const [year, month, day] = dateStr.split("-").map(Number);
-    return new Date(`${year - 543}-${month}-${day}`);
-  }
-
   const formatServiceType = (type) => {
-    return type
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+    if (Array.isArray(type)) {
+      return type.map(formatServiceType).join(", ");
+    }
+    if (typeof type === "string") {
+      return type
+        .split("_")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+    return "Unknown Service";
   };
 
   const getServiceIcon = (serviceName, index) => {
@@ -266,7 +270,7 @@ const Dashboard = () => {
               </div>
 
               <h3 className="text-lg font-medium mb-1">
-                {formatServiceType(booking.serviceType)}
+                {formatServiceType(booking.serviceTypes)}
               </h3>
 
               <div className="space-y-2 mt-4 text-sm text-gray-600">
@@ -279,17 +283,21 @@ const Dashboard = () => {
                   <span>{booking.technician || "Technician not assigned"}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <Calendar className="w-4 h-4 text-gray-400" />
                   <span>
-                    {buddhistToGregorian(booking.date).toLocaleDateString(
-                      "en-US",
-                      {
-                        weekday: "short",
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      }
-                    )}
+                    {booking.date} {booking.timeSlot}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <span>
+                    Ends:{" "}
+                    {booking.serviceEndDate
+                      ? format(
+                          new Date(booking.serviceEndDate),
+                          "dd MMM yyyy, HH:mm"
+                        )
+                      : "Not completed"}
                   </span>
                 </div>
               </div>

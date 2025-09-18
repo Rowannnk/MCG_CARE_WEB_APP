@@ -17,6 +17,7 @@ import ListProducts from "./pages/admin/ListProducts";
 import UserManagement from "./pages/admin/UserManagement";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import CustomerFeedback from "./pages/admin/CustomerFeedback";
 
 const App = () => {
   const location = useLocation();
@@ -43,6 +44,7 @@ const App = () => {
           <Route path="list-bookings" element={<ListBooking />} />
           <Route path="list-products" element={<ListProducts />} />
           <Route path="users" element={<UserManagement />} />
+          <Route path="customer-feedbacks" element={<CustomerFeedback />} />
         </Route>
       </Routes>
 

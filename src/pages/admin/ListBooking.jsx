@@ -14,23 +14,31 @@ const ListBooking = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [currentPage]); // Add currentPage as dependency
 
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/api/booking", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      setBookings(response.data);
+      const response = await axios.get(
+        `/api/booking?page=${currentPage}&limit=${itemsPerPage}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      setBookings(response.data.bookings || []);
+      setTotalPages(response.data.totalPages || 1);
+      setTotalItems(response.data.total || 0);
       setError("");
     } catch (err) {
       console.error("Error fetching bookings:", err);
@@ -42,11 +50,8 @@ const ListBooking = () => {
   };
 
   // Calculate pagination values
-  const totalItems = bookings.length;
-  const totalPages = Math.ceil(totalItems / 5);
-  const startIndex = (currentPage - 1) * 5;
-  const endIndex = Math.min(startIndex + 5, totalItems);
-  const currentBookings = bookings.slice(startIndex, endIndex);
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(startIndex + itemsPerPage - 1, totalItems);
 
   // Pagination functions
   const goToPage = (page) => {
@@ -87,7 +92,7 @@ const ListBooking = () => {
       case "paid":
         return "bg-green-100 text-green-800 border border-green-200";
       case "pending":
-        return "bg-red-100 text-red-800 border border-red-200";
+        return "bg-yellow-100 text-yellow-800 border border-yellow-200";
       default:
         return "bg-gray-100 text-gray-800 border border-gray-200";
     }
@@ -139,11 +144,22 @@ const ListBooking = () => {
     return `${formattedTime} on ${formattedDate}`;
   };
 
-  const formatServiceType = (type) => {
-    return type
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+  const formatServiceEndDate = (dateString) => {
+    if (!dateString) return "Not completed";
+
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      console.error("Error formatting service end date:", error);
+      return "Invalid date";
+    }
   };
 
   // Generate page numbers for pagination
@@ -163,11 +179,6 @@ const ListBooking = () => {
 
     return pageNumbers;
   };
-  function buddhistToGregorian(dateStr) {
-    // dateStr like "2568-09-16"
-    const [year, month, day] = dateStr.split("-").map(Number);
-    return new Date(`${year - 543}-${month}-${day}`);
-  }
 
   if (loading) {
     return (
@@ -201,29 +212,30 @@ const ListBooking = () => {
         </div>
       ) : (
         <>
-          <div className="max-w-6xl overflow-x-auto mt-10">
+          <div className="max-w-7xl overflow-x-auto mt-10">
             <table className="w-full border-collapse rounded-md overflow-hidden">
               <thead>
                 <tr className="bg-primary/80 text-left text-lg text-white">
                   <th className="p-4 font-medium pl-5">Customer Name</th>
-                  <th className="p-4 font-medium">Service Type</th>
+                  <th className="p-4 font-medium">Technician</th>
                   <th className="p-4 font-medium">Booking Status</th>
                   <th className="p-4 font-medium">Payment Status</th>
-                  <th className="p-4 font-medium">Date & Time</th>
+                  <th className="p-4 font-medium">Service Date & Time</th>
+                  <th className="p-4 font-medium">Service End Date</th>
                   <th className="p-4 font-medium">Service Fee</th>
                 </tr>
               </thead>
               <tbody className="text-sm font-light">
-                {currentBookings.map((booking) => (
+                {bookings.map((booking) => (
                   <tr
                     key={booking._id}
                     className="border-b border-primary/20 bg-primary/5 even:bg-primary/10 hover:bg-primary/15 transition-colors"
                   >
                     <td className="p-4 min-w-45 pl-5">
-                      {booking.contactInfo?.name || "N/A"}
+                      {booking.user?.name || "N/A"}
                     </td>
                     <td className="p-4">
-                      {formatServiceType(booking.serviceType)}
+                      {booking.assignedTechnician?.name || "Not assigned"}
                     </td>
                     <td className="p-4">
                       <div
@@ -250,10 +262,10 @@ const ListBooking = () => {
                       </div>
                     </td>
                     <td className="p-4">
-                      {formatDateTime(
-                        buddhistToGregorian(booking.date),
-                        booking.timeSlot
-                      )}
+                      {formatDateTime(booking.date, booking.timeSlot)}
+                    </td>
+                    <td className="p-4">
+                      {formatServiceEndDate(booking.serviceEndDate)}
                     </td>
                     <td className="p-4 font-medium">
                       MMK {booking.serviceFee || 0}
@@ -268,7 +280,7 @@ const ListBooking = () => {
           {totalPages > 1 && (
             <div className="flex flex-col sm:flex-row items-center justify-between mt-6 p-4 bg-white rounded-lg shadow-sm border border-gray-200 max-w-6xl">
               <div className="text-sm text-gray-600 mb-4 sm:mb-0">
-                Page {currentPage} of {totalPages}
+                Showing {startIndex} to {endIndex} of {totalItems} entries
               </div>
 
               <div className="flex items-center space-x-1">

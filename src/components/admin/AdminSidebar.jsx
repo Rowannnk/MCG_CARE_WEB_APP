@@ -7,7 +7,8 @@ import {
   PlusCircleIcon,
   PlusSquareIcon,
   User,
-  LogOutIcon, // Add this import
+  LogOutIcon,
+  Star, // Add this import
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -45,6 +46,11 @@ const AdminSidebar = () => {
       icon: PlusCircleIcon,
     },
     { path: "/admin/users", icon: User, name: "User Management" },
+    {
+      path: "/admin/customer-feedbacks",
+      icon: Star,
+      name: "Customer Feedbacks",
+    },
   ];
 
   // Add logout function
