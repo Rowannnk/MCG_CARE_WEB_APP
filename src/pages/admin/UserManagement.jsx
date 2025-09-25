@@ -8,7 +8,10 @@ import {
   FiUser,
   FiArrowUp,
   FiArrowDown,
-  FiBook,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsLeft,
+  FiChevronsRight,
 } from "react-icons/fi";
 
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
@@ -22,6 +25,9 @@ const UserManagement = () => {
     key: "bookings",
     direction: "desc",
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 5;
 
   useEffect(() => {
     fetchUsers();
@@ -59,14 +65,11 @@ const UserManagement = () => {
 
   const sortedUsers = React.useMemo(() => {
     if (!sortConfig.key) return users;
-
     return [...users].sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
+      if (a[sortConfig.key] < b[sortConfig.key])
         return sortConfig.direction === "asc" ? -1 : 1;
-      }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
+      if (a[sortConfig.key] > b[sortConfig.key])
         return sortConfig.direction === "asc" ? 1 : -1;
-      }
       return 0;
     });
   }, [users, sortConfig]);
@@ -77,6 +80,15 @@ const UserManagement = () => {
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortConfig]);
+
   const renderSortIndicator = (key) => {
     if (sortConfig.key !== key) return null;
     return sortConfig.direction === "asc" ? (
@@ -84,6 +96,23 @@ const UserManagement = () => {
     ) : (
       <FiArrowDown size={14} />
     );
+  };
+
+  const goToPage = (page) => setCurrentPage(page);
+  const goToPreviousPage = () =>
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  const goToNextPage = () =>
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+
+  const getPageNumbers = () => {
+    const maxButtons = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let end = start + maxButtons - 1;
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, end - maxButtons + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
   if (loading) {
@@ -115,7 +144,6 @@ const UserManagement = () => {
         <div className="text-sm text-gray-600">Total: {users.length} users</div>
       </div>
 
-      {/* Search and Filter for Users */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="relative flex-1">
@@ -141,50 +169,60 @@ const UserManagement = () => {
               <option value="name">Name</option>
               <option value="bookings">Bookings</option>
               <option value="email">Email</option>
+              <option value="phone">Phone</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Users Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th
-                scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                 onClick={() => handleSort("name")}
               >
                 <div className="flex items-center">
-                  User
-                  {renderSortIndicator("name")}
+                  User {renderSortIndicator("name")}
                 </div>
               </th>
               <th
-                scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                 onClick={() => handleSort("email")}
               >
                 <div className="flex items-center">
-                  Email
-                  {renderSortIndicator("email")}
+                  Email {renderSortIndicator("email")}
                 </div>
               </th>
               <th
-                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("region")}
+              >
+                <div className="flex items-center">
+                  Region {renderSortIndicator("region")}
+                </div>
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("phone")}
+              >
+                <div className="flex items-center">
+                  Phone {renderSortIndicator("phone")}
+                </div>
+              </th>
+              <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                 onClick={() => handleSort("bookings")}
               >
                 <div className="flex items-center">
-                  Bookings
-                  {renderSortIndicator("bookings")}
+                  Bookings {renderSortIndicator("bookings")}
                 </div>
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredUsers.map((user) => (
+            {currentUsers.map((user) => (
               <tr key={user._id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -208,24 +246,31 @@ const UserManagement = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        user.bookings > 0
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {user.bookings} booking
-                      {user.bookings !== 1 ? "s" : ""}
-                    </span>
+                    {user.region || "N/A"}
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {user.phone || "-"}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      user.bookings > 0
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {user.bookings} booking
+                    {user.bookings !== 1 ? "s" : ""}
+                  </span>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* Empty State for Users */}
         {filteredUsers.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
@@ -239,6 +284,64 @@ const UserManagement = () => {
                 ? "Try adjusting your search query"
                 : "Users will appear here once they register"}
             </p>
+          </div>
+        )}
+
+        {filteredUsers.length > usersPerPage && (
+          <div className="flex flex-col sm:flex-row items-center justify-between mt-6 p-4 bg-white rounded-lg shadow-sm ">
+            <div className="text-sm text-gray-600 mb-4 sm:mb-0">
+              Showing {indexOfFirstUser + 1} to {indexOfLastUser} of{" "}
+              {totalPages} entries
+            </div>
+            <div className="flex justify-center items-center gap-1 p-4 border-t">
+              <button
+                onClick={() => goToPage(1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded border border-gray-300 bg-white text-gray-700 disabled:opacity-50 hover:bg-gray-50"
+                title="First Page"
+              >
+                <FiChevronsLeft size={16} />
+              </button>
+              <button
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                className="p-2 rounded border border-gray-300 bg-white text-gray-700 disabled:opacity-50 hover:bg-gray-50"
+                title="Previous Page"
+              >
+                <FiChevronLeft size={16} />
+              </button>
+
+              {getPageNumbers().map((page) => (
+                <button
+                  key={page}
+                  onClick={() => goToPage(page)}
+                  className={`px-3 py-1 rounded border text-sm ${
+                    currentPage === page
+                      ? "bg-primary text-white border-primary"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded border border-gray-300 bg-white text-gray-700 disabled:opacity-50 hover:bg-gray-50"
+                title="Next Page"
+              >
+                <FiChevronRight size={16} />
+              </button>
+              <button
+                onClick={() => goToPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded border border-gray-300 bg-white text-gray-700 disabled:opacity-50 hover:bg-gray-50"
+                title="Last Page"
+              >
+                <FiChevronsRight size={16} />
+              </button>
+            </div>
           </div>
         )}
       </div>

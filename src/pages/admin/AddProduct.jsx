@@ -196,7 +196,6 @@ const AddProduct = () => {
 
   return (
     <div className="p-6">
-      {/* Toast Notification */}
       {toast.show && (
         <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
@@ -216,7 +215,6 @@ const AddProduct = () => {
           )}
         </div>
 
-        {/* Brand Filter Buttons */}
         <div className="flex gap-4 mb-4 flex-wrap">
           {brands.map((brand) => (
             <button
@@ -238,7 +236,7 @@ const AddProduct = () => {
       </div>
 
       <div className="overflow-x-auto pb-4 mt-4">
-        <div className="flex flex-wrap max-sm:justify-center gap-10">
+        <div className="flex flex-wrap max-sm:justify-center gap-10 items-start">
           {filteredProducts.slice(0, visibleCount).map((item) => (
             <AdminProductCard
               product={item}
