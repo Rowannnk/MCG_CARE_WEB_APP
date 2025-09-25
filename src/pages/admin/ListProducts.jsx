@@ -5,15 +5,46 @@ import {
   FiChevronRight,
   FiChevronsLeft,
   FiChevronsRight,
+  FiTag,
+  FiBox,
+  FiDollarSign,
+  FiInfo,
+  FiCalendar,
+  FiStar,
 } from "react-icons/fi";
 import { useAppContext } from "../../context/AppContext";
 
 const ListProducts = () => {
   const { products, loading } = useAppContext();
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
+
+  const openModal = async (productId) => {
+    setIsModalOpen(true);
+    setModalLoading(true);
+
+    try {
+      const response = await fetch(
+        `https://backend-zeta-pied-49.vercel.app/api/product/${productId}`
+      );
+      const data = await response.json();
+      setSelectedProduct(data);
+    } catch (err) {
+      console.error("Failed to fetch product", err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
 
   if (loading) {
     return (
@@ -26,47 +57,31 @@ const ListProducts = () => {
     );
   }
 
-  // Calculate pagination values
   const totalItems = products.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
   const currentProducts = products.slice(startIndex, endIndex);
 
-  // Pagination functions
   const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
-
   const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
-
   const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
-  // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i);
-    }
-
+    for (let i = startPage; i <= endPage; i++) pageNumbers.push(i);
     return pageNumbers;
   };
 
@@ -96,7 +111,8 @@ const ListProducts = () => {
                 {currentProducts.map((product) => (
                   <tr
                     key={product._id}
-                    className="border-b border-primary/30 bg-primary/5 even:bg-primary/10 hover:bg-primary/15 transition-colors"
+                    className="border-b border-primary/30 bg-primary/5 even:bg-primary/10 hover:bg-primary/15 transition-colors cursor-pointer"
+                    onClick={() => openModal(product._id)}
                   >
                     <td className="p-4 min-w-45 pl-5">
                       {product.name || product.title}
@@ -120,13 +136,11 @@ const ListProducts = () => {
             </table>
           </div>
 
-          {/* Pagination Controls - Bottom */}
           {totalPages > 1 && (
             <div className="flex flex-col sm:flex-row items-center justify-between mt-6 p-4 bg-white rounded-lg shadow-sm border border-gray-200 max-w-6xl">
               <div className="text-sm text-gray-600 mb-4 sm:mb-0">
                 Showing {startIndex + 1} to {endIndex} of {totalItems} entries
               </div>
-
               <div className="flex items-center space-x-1">
                 <button
                   onClick={() => goToPage(1)}
@@ -175,6 +189,159 @@ const ListProducts = () => {
                 >
                   <FiChevronsRight size={16} />
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Modal */}
+          {isModalOpen && (
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-50 backdrop-blur-md bg-black/40">
+              <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-gray-200">
+                <div className="sticky top-0 flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200">
+                  <h2 className="text-2xl font-semibold flex items-center gap-2">
+                    <FiBox className="text-primary" /> Product Details
+                  </h2>
+                  <button
+                    onClick={closeModal}
+                    className="p-2 rounded-full hover:bg-gray-100 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="px-6 py-6 space-y-4 text-gray-800">
+                  {modalLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+                    </div>
+                  ) : selectedProduct ? (
+                    <>
+                      {/* Images */}
+                      {selectedProduct.images?.length > 0 && (
+                        <div className="grid grid-cols-3 gap-3">
+                          {selectedProduct.images.map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img}
+                              alt={selectedProduct.name}
+                              className="w-full h-32 object-contain rounded-lg border"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Basic info */}
+                      <div className="p-4 bg-gray-50 rounded-lg flex items-center gap-3">
+                        <FiTag className="text-purple-500" />
+                        <p className="font-medium">
+                          Name: {selectedProduct.name}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-lg flex items-center gap-3">
+                        <FiBox className="text-blue-500" />
+                        <p className="font-medium">
+                          Brand: {selectedProduct.brand}
+                        </p>
+                      </div>
+                      {selectedProduct.productModel && (
+                        <div className="p-4 bg-gray-50 rounded-lg flex items-center gap-3">
+                          <FiInfo className="text-orange-500" />
+                          <p className="font-medium">
+                            Model: {selectedProduct.productModel}
+                          </p>
+                        </div>
+                      )}
+                      {selectedProduct.description && (
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <p className="font-medium">
+                            Description: {selectedProduct.description}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Specs */}
+                      {selectedProduct.specs && (
+                        <div className="p-4 bg-gray-50 rounded-lg space-y-1">
+                          {Object.entries(selectedProduct.specs).map(
+                            ([key, value]) =>
+                              value && (
+                                <p key={key}>
+                                  <span className="font-medium capitalize">
+                                    {key.replace("_", " ")}:
+                                  </span>{" "}
+                                  {value}
+                                </p>
+                              )
+                          )}
+                        </div>
+                      )}
+
+                      {selectedProduct.release_date && (
+                        <div className="p-4 bg-gray-50 rounded-lg flex items-center gap-3">
+                          <FiCalendar className="text-indigo-500" />
+                          <p className="font-medium">
+                            Release Date:{" "}
+                            {new Date(
+                              selectedProduct.release_date
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedProduct.tagline && (
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <p className="font-medium">
+                            Tagline: {selectedProduct.tagline}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="p-4 bg-gray-50 rounded-lg flex items-center gap-3">
+                        <FiDollarSign className="text-green-500" />
+                        <p className="font-medium">
+                          Price: THB {selectedProduct.price}
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-gray-50 rounded-lg flex items-center gap-3">
+                        <FiStar className="text-yellow-400" />
+                        <p className="font-medium">
+                          Vote: {selectedProduct.vote_average || 0} (
+                          {selectedProduct.vote_count || 0} votes)
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-gray-50 rounded-lg flex items-center gap-3">
+                        <FiBox
+                          className={`${
+                            selectedProduct.stock > 0
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }`}
+                        />
+                        <p className="font-medium">
+                          Stock:{" "}
+                          {selectedProduct.stock > 0
+                            ? `${selectedProduct.stock} in stock`
+                            : "Out of stock"}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      Failed to load product details.
+                    </div>
+                  )}
+                </div>
+
+                <div className="sticky bottom-0 flex justify-end items-center px-6 py-4 bg-white border-t border-gray-200">
+                  <button
+                    onClick={closeModal}
+                    className="px-5 py-2 rounded-full bg-primary text-white font-medium hover:opacity-90"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           )}

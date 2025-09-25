@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import Title from "../../components/admin/Title";
 import axios from "axios";
@@ -6,6 +7,13 @@ import {
   FiChevronRight,
   FiChevronsLeft,
   FiChevronsRight,
+  FiX,
+  FiUser,
+  FiTool,
+  FiCalendar,
+  FiCheckCircle,
+  FiMail,
+  FiPhone,
 } from "react-icons/fi";
 
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
@@ -17,13 +25,18 @@ const ListBooking = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  // Modal states
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
   useEffect(() => {
     fetchBookings();
-  }, [currentPage]); // Add currentPage as dependency
+  }, [currentPage]);
 
   const fetchBookings = async () => {
     try {
@@ -47,6 +60,33 @@ const ListBooking = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchBookingDetails = async (bookingId) => {
+    try {
+      setModalLoading(true);
+      const response = await axios.get(`/api/booking/admin/${bookingId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      setSelectedBooking(response.data);
+    } catch (err) {
+      console.error("Error fetching booking details:", err);
+      setError("Failed to load booking details.");
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleRowClick = async (bookingId) => {
+    await fetchBookingDetails(bookingId);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedBooking(null);
   };
 
   // Calculate pagination values
@@ -162,6 +202,37 @@ const ListBooking = () => {
     }
   };
 
+  const formatServiceType = (type) => {
+    if (Array.isArray(type)) {
+      return type.map(formatServiceType).join(", ");
+    }
+    if (typeof type === "string") {
+      return type
+        .split("_")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+    return "Unknown Service";
+  };
+
+  const formatUTCDateTime = (dateString) => {
+    if (!dateString) return "Not available";
+    try {
+      const date = new Date(dateString);
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(date.getUTCDate()).padStart(2, "0");
+      const hours = date.getUTCHours();
+      const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const displayHours = hours % 12 || 12;
+
+      return `${year}-${month}-${day} ${displayHours}:${minutes} ${ampm}`;
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
+
   // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pageNumbers = [];
@@ -229,7 +300,8 @@ const ListBooking = () => {
                 {bookings.map((booking) => (
                   <tr
                     key={booking._id}
-                    className="border-b border-primary/20 bg-primary/5 even:bg-primary/10 hover:bg-primary/15 transition-colors"
+                    onClick={() => handleRowClick(booking._id)}
+                    className="border-b border-primary/20 bg-primary/5 even:bg-primary/10 hover:bg-primary/15 transition-colors cursor-pointer"
                   >
                     <td className="p-4 min-w-45 pl-5">
                       {booking.user?.name || "N/A"}
@@ -265,7 +337,28 @@ const ListBooking = () => {
                       {formatDateTime(booking.date, booking.timeSlot)}
                     </td>
                     <td className="p-4">
-                      {formatServiceEndDate(booking.serviceEndDate)}
+                      {booking.serviceEndDate
+                        ? (() => {
+                            const date = new Date(booking.serviceEndDate);
+
+                            const year = date.getUTCFullYear();
+                            const month = String(
+                              date.getUTCMonth() + 1
+                            ).padStart(2, "0");
+                            const day = String(date.getUTCDate()).padStart(
+                              2,
+                              "0"
+                            );
+                            const hours = date.getUTCHours();
+                            const minutes = String(
+                              date.getUTCMinutes()
+                            ).padStart(2, "0");
+                            const ampm = hours >= 12 ? "PM" : "AM";
+                            const displayHours = hours % 12 || 12;
+
+                            return `${year}-${month}-${day} ${displayHours}:${minutes} ${ampm}`;
+                          })()
+                        : "Not completed"}{" "}
                     </td>
                     <td className="p-4 font-medium">
                       MMK {booking.serviceFee || 0}
@@ -275,6 +368,252 @@ const ListBooking = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Beautiful Booking Details Modal */}
+          {isModalOpen && (
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-50 backdrop-blur-md bg-black/40">
+              <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-gray-200">
+                {/* Header */}
+                <div className="sticky top-0 flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200">
+                  <h2 className="text-2xl font-semibold flex items-center gap-2">
+                    <FiCalendar className="text-primary" /> Booking Details
+                  </h2>
+                  <button
+                    onClick={closeModal}
+                    className="p-2 rounded-full hover:bg-gray-100 transition"
+                  >
+                    <FiX size={24} />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="px-6 py-6 space-y-6 text-gray-800">
+                  {modalLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+                    </div>
+                  ) : selectedBooking ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      {/* Left Column */}
+                      <div className="space-y-6">
+                        <div className="p-5 border-l-4 border-primary bg-gray-50 rounded-lg shadow-sm">
+                          <h3 className="text-lg font-semibold mb-2">
+                            Booking Info
+                          </h3>
+                          <div className="space-y-2">
+                            <p className="capitalize font-medium">
+                              Status:{" "}
+                              <span className="bg-green-100 text-green-800 px-3 py-1 text-sm rounded-full">
+                                {selectedBooking.status}
+                              </span>
+                            </p>
+                            <p>
+                              Payment:{" "}
+                              <span className="bg-blue-100 text-blue-800 px-3 py-1 text-sm rounded-full">
+                                {selectedBooking.paymentStatus}
+                              </span>
+                            </p>
+                            <p>
+                              Service Fee:{" "}
+                              <span className="bg-purple-100 text-purple-800 px-3 py-1 text-sm rounded-full">
+                                MMK {selectedBooking.serviceFee}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-5 border-l-4 border-blue-400 bg-gray-50 rounded-lg shadow-sm">
+                          <h3 className="text-lg font-semibold mb-2">
+                            Customer
+                          </h3>
+                          <div className="space-y-3">
+                            {/* Name */}
+                            <div className="flex items-center gap-2">
+                              <FiUser className="text-blue-500" />
+                              <p className="text-sm font-medium">Name:</p>
+                              <span className=" px-2 py-1 rounded">
+                                {selectedBooking.user?.name || "N/A"}
+                              </span>
+                            </div>
+
+                            {/* Email */}
+                            <div className="flex items-center gap-2">
+                              <FiMail className="text-green-500" />
+                              <p className="text-sm font-medium">Email:</p>
+                              <span className=" px-2 py-1 rounded">
+                                {selectedBooking.user?.email || "N/A"}
+                              </span>
+                            </div>
+
+                            {/* Phone */}
+                            <div className="flex items-center gap-2">
+                              <FiPhone className="text-purple-500" />
+                              <p className="text-sm font-medium">Phone:</p>
+                              <span className=" px-2 py-1 rounded">
+                                {selectedBooking.user?.phone || "N/A"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column */}
+                      <div className="space-y-6">
+                        <div className="p-5 border-l-4 border-orange-400 bg-gray-50 rounded-lg shadow-sm">
+                          <h3 className="text-lg font-semibold mb-2">
+                            Technician
+                          </h3>
+                          {selectedBooking.assignedTechnician ? (
+                            <>
+                              <div className="space-y-3">
+                                {/* Technician Name */}
+                                <div className="flex items-center gap-2">
+                                  <FiUser className="text-orange-500" />
+                                  <p className="text-sm font-medium">Name:</p>
+                                  <span className=" px-2 py-1 rounded">
+                                    {selectedBooking.assignedTechnician?.name ||
+                                      "N/A"}
+                                  </span>
+                                </div>
+
+                                {/* Technician Email */}
+                                <div className="flex items-center gap-2">
+                                  <FiMail className="text-green-500" />
+                                  <p className="text-sm font-medium">Email:</p>
+                                  <span className=" px-2 py-1 rounded">
+                                    {selectedBooking.assignedTechnician
+                                      ?.email || "N/A"}
+                                  </span>
+                                </div>
+
+                                {/* Technician Phone */}
+                                <div className="flex items-center gap-2">
+                                  <FiPhone className="text-purple-500" />
+                                  <p className="text-sm font-medium">Phone:</p>
+                                  <span className=" px-2 py-1 rounded">
+                                    {selectedBooking.assignedTechnician
+                                      ?.phone || "N/A"}
+                                  </span>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <p className="text-gray-500">
+                              No technician assigned
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="p-5 border-l-4 border-purple-400 bg-gray-50 rounded-lg shadow-sm">
+                          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            Service Details
+                          </h3>
+                          <div className="space-y-3 text-gray-700">
+                            {/* Date & Time */}
+                            <div className="flex items-center gap-2">
+                              <FiCalendar className="text-purple-500" />
+                              <div>
+                                <p className="text-sm font-medium">
+                                  Date & Time
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  {formatDateTime(
+                                    selectedBooking.date,
+                                    selectedBooking.timeSlot
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* End Date */}
+                            <div className="flex items-center gap-2">
+                              <FiCheckCircle className="text-green-500" />
+                              <div>
+                                <p className="text-sm font-medium">End Date</p>
+                                <p className="text-sm text-gray-600">
+                                  {selectedBooking.serviceEndDate
+                                    ? formatUTCDateTime(
+                                        selectedBooking.serviceEndDate
+                                      )
+                                    : "Not completed"}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Service Type */}
+                            <div className="flex items-center gap-2">
+                              <FiTool className="text-orange-500" />
+                              <div>
+                                <p className="text-sm font-medium">
+                                  Service Type
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  {formatServiceType(
+                                    selectedBooking.serviceTypes
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Brand */}
+                            <div className="flex items-center gap-2">
+                              <FiUser className="text-blue-500" />
+                              <div>
+                                <p className="text-sm font-medium">Brand</p>
+                                <p className="text-sm text-gray-600">
+                                  {selectedBooking.brandName}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Model */}
+                            <div className="flex items-center gap-2">
+                              <FiUser className="text-indigo-500" />
+                              <div>
+                                <p className="text-sm font-medium">Model</p>
+                                <p className="text-sm text-gray-600">
+                                  {selectedBooking.productModel}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Description */}
+                            {selectedBooking.description && (
+                              <div className="flex items-start gap-2">
+                                <FiTool className="text-gray-500 mt-1" />
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    Description
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    {selectedBooking.description}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      Failed to load booking details.
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="sticky bottom-0 flex justify-end items-center px-6 py-4 bg-white border-t border-gray-200">
+                  <button
+                    onClick={closeModal}
+                    className="px-5 py-2 rounded-full bg-primary text-white font-medium hover:opacity-90"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Pagination Controls - Bottom */}
           {totalPages > 1 && (

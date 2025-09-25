@@ -48,6 +48,11 @@ const AdminProductCard = ({ product, onUpdate, onDelete }) => {
     ...product,
     name: product.name || product.title || "",
     description: product.description || product.overview || "",
+    release_date: product.release_date
+      ? product.release_date.split("T")[0]
+      : "",
+    vote_count: product.vote_count || 0,
+    vote_average: product.vote_average || 0,
   });
   const [imagePreviews, setImagePreviews] = useState(product.images || []);
   const [newImages, setNewImages] = useState([]);
@@ -235,8 +240,11 @@ const AdminProductCard = ({ product, onUpdate, onDelete }) => {
               className="w-full h-full object-contain p-4"
             />
           )}
-          <div className="absolute top-2 right-2 flex gap-2">
-            <span className="bg-primary/90 text-white text-xs px-2 py-1 rounded-full">
+          <div className="absolute top-2 right-2 flex gap-2 max-w-[40%]">
+            <span
+              className="bg-primary/90 text-white text-xs px-2 py-1 rounded-full
+                   truncate block overflow-hidden text-ellipsis"
+            >
               {product.specs?.type || "N/A"}
             </span>
           </div>
@@ -285,6 +293,20 @@ const AdminProductCard = ({ product, onUpdate, onDelete }) => {
                   className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Description"
                   rows="3"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Release Date
+                </label>
+                <input
+                  type="date"
+                  name="release_date"
+                  value={editedProduct.release_date || ""}
+                  onChange={handleInputChange}
+                  placeholder="Release Date"
+                  className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -342,9 +364,15 @@ const AdminProductCard = ({ product, onUpdate, onDelete }) => {
                     className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select Type</option>
-                    <option value="Split">Split</option>
-                    <option value="Portable">Portable</option>
-                    <option value="Window">Window</option>
+                    <option value="Non-Inverter Floor Standing Type">
+                      Non-Inverter Floor Standing Type
+                    </option>
+                    <option value="Non-Inverter Split Type">
+                      Non-Inverter Split Type
+                    </option>
+                    <option value="Inverter Split Type">
+                      Inverter Split Type
+                    </option>
                   </select>
                 </div>
               </div>
@@ -403,6 +431,38 @@ const AdminProductCard = ({ product, onUpdate, onDelete }) => {
                     onChange={handleInputChange}
                     className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Warranty"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Vote Count
+                  </label>
+                  <input
+                    type="number"
+                    name="vote_count"
+                    min={0}
+                    value={editedProduct.vote_count}
+                    onChange={handleInputChange}
+                    className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Vote Count"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Vote Average
+                  </label>
+                  <input
+                    type="number"
+                    name="vote_average"
+                    min={0}
+                    max={5}
+                    step={0.1}
+                    value={editedProduct.vote_average}
+                    onChange={handleInputChange}
+                    className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Vote Average"
                   />
                 </div>
               </div>

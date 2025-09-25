@@ -33,10 +33,10 @@ const Toast = ({ message, type, onClose }) => {
 
 const AddProduct = () => {
   const [productData, setProductData] = useState({
-    title: "",
-    overview: "",
-    poster_path: "",
+    name: "",
+    description: "",
     brand: "",
+    productModel: "",
     specs: {
       capacity: "",
       type: "",
@@ -48,6 +48,9 @@ const AddProduct = () => {
     price: "",
     stock: "",
     tagline: "",
+    release_date: "",
+    vote_count: 0,
+    vote_average: 0,
   });
 
   const fileInputRef = useRef(null);
@@ -106,45 +109,39 @@ const AddProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const formData = new FormData();
-
-      formData.append("name", productData.title);
+      formData.append("name", productData.name);
       formData.append("brand", productData.brand);
-      formData.append("productModel", productData.specs.type || "");
-      formData.append("description", productData.overview || "");
+      formData.append("productModel", productData.productModel); // fixed
+      formData.append("description", productData.description);
       formData.append("tagline", productData.tagline || "");
       formData.append("price", productData.price);
       formData.append("stock", productData.stock);
+      formData.append("vote_count", productData.vote_count);
+      formData.append("vote_average", productData.vote_average);
       formData.append("specs", JSON.stringify(productData.specs));
 
       if (productData.release_date) {
         formData.append("release_date", productData.release_date);
       }
 
-      if (selectedFiles.length > 0) {
-        selectedFiles.forEach((file) => {
-          formData.append("images", file);
-        });
-      }
+      selectedFiles.forEach((file) => formData.append("images", file));
 
-      const res = await axios.post("/api/product/create", formData, {
+      await axios.post("/api/product/create", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
 
-      console.log("Product created:", res.data);
-
       showToast("Product created successfully!");
 
       setProductData({
-        title: "",
-        overview: "",
-        poster_path: "",
+        name: "",
+        description: "",
         brand: "",
+        productModel: "",
         specs: {
           capacity: "",
           type: "",
@@ -156,6 +153,9 @@ const AddProduct = () => {
         price: "",
         stock: "",
         tagline: "",
+        release_date: "",
+        vote_count: 0,
+        vote_average: 0,
       });
       setPreviewImages([]);
       setSelectedFiles([]);
@@ -181,6 +181,19 @@ const AddProduct = () => {
     fetchProducts(); // Refresh the product list
   };
 
+  const [selectedBrand, setSelectedBrand] = useState("All");
+  const [showAll, setShowAll] = useState(false);
+
+  const brands = ["All", "MCG", "Chigo", "Daikin", "Aufit"];
+
+  // Filter products by selected brand
+  const filteredProducts =
+    selectedBrand === "All"
+      ? products
+      : products.filter((p) => p.brand === selectedBrand);
+
+  const visibleCount = showAll ? filteredProducts.length : 8;
+
   return (
     <div className="p-6">
       {/* Toast Notification */}
@@ -190,11 +203,43 @@ const AddProduct = () => {
 
       <Title text1="Add" text2="Products" />
 
-      {/* Existing Product Display */}
-      <p className="mt-10 text-lg font-medium">Our Products</p>
+      <div className="mt-10 ">
+        <div className="mt-10 flex items-center justify-between max-w-6xl mb-5">
+          <h2 className="text-lg font-medium">Our Products</h2>
+          {filteredProducts.length > 8 && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="text-red-600 cursor-pointer underline hover:text-red-400 transition-all duration-200"
+            >
+              {showAll ? "Show Less" : "See All"}
+            </button>
+          )}
+        </div>
+
+        {/* Brand Filter Buttons */}
+        <div className="flex gap-4 mb-4 flex-wrap">
+          {brands.map((brand) => (
+            <button
+              key={brand}
+              onClick={() => {
+                setSelectedBrand(brand);
+                setShowAll(false);
+              }}
+              className={`px-4 py-2 rounded-md border ${
+                selectedBrand === brand
+                  ? "bg-red-600 text-white"
+                  : " text-black hover:bg-gray-100"
+              } transition`}
+            >
+              {brand}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="overflow-x-auto pb-4 mt-4">
         <div className="flex flex-wrap max-sm:justify-center gap-10">
-          {products.map((item) => (
+          {filteredProducts.slice(0, visibleCount).map((item) => (
             <AdminProductCard
               product={item}
               key={item._id}
@@ -214,12 +259,12 @@ const AddProduct = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-2">
-                Product Title
+                Product Name
               </label>
               <input
                 type="text"
-                name="title"
-                value={productData.title}
+                name="name"
+                value={productData.name}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
@@ -237,27 +282,40 @@ const AddProduct = () => {
                 required
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Product Model
+              </label>
+              <input
+                type="text"
+                name="productModel"
+                value={productData.productModel}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Tagline</label>
+              <input
+                type="text"
+                name="tagline"
+                value={productData.tagline}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">Overview</label>
             <textarea
-              name="overview"
-              value={productData.overview}
+              name="description"
+              value={productData.description}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md min-h-[100px] focus:ring-2 focus:ring-primary focus:border-transparent"
               required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Tagline</label>
-            <input
-              type="text"
-              name="tagline"
-              value={productData.tagline}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
 
@@ -369,9 +427,16 @@ const AddProduct = () => {
                   className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
                   <option value="">Select Type</option>
-                  <option value="Split">Split</option>
-                  <option value="Portable">Portable</option>
-                  <option value="Window">Window</option>
+                  <option value="Non-Inverter Floor Standing Type">
+                    Non-Inverter Floor Standing Type
+                  </option>
+                  <option value="Non-Inverter Split Type">
+                    Non-Inverter Split Type
+                  </option>
+                  <option value="Inverter Split Type">
+                    {" "}
+                    Inverter Split Type
+                  </option>
                 </select>
               </div>
 
@@ -427,16 +492,59 @@ const AddProduct = () => {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-3 gap-6 mt-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Vote Count
+                </label>
+                <input
+                  type="number"
+                  name="vote_count"
+                  min={0}
+                  value={productData.vote_count}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Vote Average
+                </label>
+                <input
+                  type="number"
+                  name="vote_average"
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  value={productData.vote_average}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Release Date
+                </label>
+                <input
+                  type="date"
+                  name="release_date"
+                  value={productData.release_date}
+                  onChange={handleChange}
+                  placeholder="2025-04-28"
+                  className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Inventory & Pricing */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-2">
-                Price (THB)
+                Price (MMK)
               </label>
               <div className="inline-flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-md w-full focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent">
-                <p className="text-gray-400 text-sm">THB</p>
+                <p className="text-gray-400 text-sm">MMK</p>
                 <input
                   type="number"
                   name="price"

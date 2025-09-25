@@ -16,7 +16,6 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Title from "../../components/admin/Title";
 import { Cpu, Smartphone } from "lucide-react";
-import { format } from "date-fns";
 
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 
@@ -30,7 +29,6 @@ const Dashboard = () => {
   const [recentBookings, setRecentBookings] = useState([]);
   const [topServices, setTopServices] = useState([]);
   const [technicianPerformance, setTechnicianPerformance] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -39,9 +37,7 @@ const Dashboard = () => {
       try {
         setLoading(true);
         const totalsRes = await axios.get("/api/booking/admin/dashboard", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setDashboardData(totalsRes.data);
 
@@ -53,7 +49,6 @@ const Dashboard = () => {
             },
           }
         );
-
         const mappedBookings = recentRes.data.map((b) => ({
           id: b._id,
           serviceTypes: b.serviceTypes,
@@ -72,7 +67,6 @@ const Dashboard = () => {
         }));
         setRecentBookings(mappedBookings);
 
-        // Fetch popular services
         const servicesRes = await axios.get(
           "/api/booking/admin/popular-services",
           {
@@ -81,32 +75,28 @@ const Dashboard = () => {
             },
           }
         );
-
         const mappedServices = servicesRes.data.map((s) => ({
           name: s.serviceType,
           count: s.totalRequests,
         }));
         setTopServices(mappedServices);
-        console.log(topServices);
 
-        // Fetch technician performance
         const techRes = await axios.get("/api/booking/technician-stats", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-
         const mappedTech = techRes.data.map((t) => ({
           name: t.name,
           jobsCompleted: t.completedServices,
           rating: t.rating,
           points: t.points,
           upcomingJobs: t.pendingServices,
+          email: t.email,
         }));
         setTechnicianPerformance(mappedTech);
         setError("");
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
+        setError("Failed to fetch data");
       } finally {
         setLoading(false);
       }
@@ -139,22 +129,18 @@ const Dashboard = () => {
   ];
 
   const formatServiceType = (type) => {
-    if (Array.isArray(type)) {
-      return type.map(formatServiceType).join(", ");
-    }
+    if (Array.isArray(type)) return type.map(formatServiceType).join(", ");
     if (typeof type === "string") {
       return type
         .split("_")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(" ");
     }
     return "Unknown Service";
   };
 
   const getServiceIcon = (serviceName, index) => {
-    // Use index to cycle through 3 different icons
     const iconIndex = index % 3;
-
     switch (iconIndex) {
       case 0:
         return <Wrench className="w-5 h-5" />;
@@ -167,10 +153,8 @@ const Dashboard = () => {
     }
   };
 
-  // Helper function to get background color based on index
   const getServiceIconBg = (index) => {
     const bgIndex = index % 3;
-
     switch (bgIndex) {
       case 0:
         return "bg-blue-100 text-blue-600";
@@ -198,10 +182,8 @@ const Dashboard = () => {
     return (
       <>
         <Title text1="Admin" text2="Dashboard" />
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary">
-            {error}
-          </div>
+        <div className="flex justify-center items-center h-64 text-red-500">
+          {error}
         </div>
       </>
     );
@@ -210,6 +192,8 @@ const Dashboard = () => {
   return (
     <>
       <Title text1="Admin" text2="Dashboard" />
+
+      {/* Summary Cards */}
       <div className="relative flex flex-wrap gap-4 mt-6">
         <div className="flex flex-wrap gap-4 w-full">
           {dashboardCards.map((card, index) => {
@@ -230,90 +214,115 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Recent Bookings Section */}
+      {/* Recent Bookings */}
       <div className="relative mt-8 max-w-5xl">
         <h2 className="text-lg font-medium mb-6 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-primary" />
           Recent Service Bookings
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recentBookings.map((booking) => (
-            <div
-              key={booking.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <span
-                  className="px-3 py-1 rounded-full text-sm font-medium"
-                  style={{
-                    backgroundColor:
-                      booking.paymentStatus === "Paid"
-                        ? "#E6F6EC"
-                        : booking.paymentStatus === "Pending"
-                        ? "#FEEBEB"
-                        : "#FFF8E6",
-                    color:
-                      booking.paymentStatus === "Paid"
-                        ? "#067647"
-                        : booking.paymentStatus === "Pending"
-                        ? "#B54708"
-                        : "#D92D20",
-                  }}
-                >
-                  {booking.paymentStatus}
-                </span>
-
-                <span className="text-lg font-semibold text-primary">
-                  MMK {booking.price}
-                </span>
-              </div>
-
-              <h3 className="text-lg font-medium mb-1">
-                {formatServiceType(booking.serviceTypes)}
-              </h3>
-
-              <div className="space-y-2 mt-4 text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-gray-500" />
-                  <span>{booking.customerName}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-gray-500" />
-                  <span>{booking.technician || "Technician not assigned"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span>
-                    {booking.date} {booking.timeSlot}
+        {recentBookings.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">
+            No recent bookings found.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recentBookings.map((booking) => (
+              <div
+                key={booking.id}
+                className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <span
+                    className="px-3 py-1 rounded-full text-sm font-medium"
+                    style={{
+                      backgroundColor:
+                        booking.paymentStatus === "Paid"
+                          ? "#E6F6EC"
+                          : booking.paymentStatus === "Pending"
+                          ? "#FEEBEB"
+                          : "#FFF8E6",
+                      color:
+                        booking.paymentStatus === "Paid"
+                          ? "#067647"
+                          : booking.paymentStatus === "Pending"
+                          ? "#B54708"
+                          : "#D92D20",
+                    }}
+                  >
+                    {booking.paymentStatus}
+                  </span>
+                  <span className="text-lg font-semibold text-primary">
+                    MMK {booking.price}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span>
-                    Ends:{" "}
-                    {booking.serviceEndDate
-                      ? format(
-                          new Date(booking.serviceEndDate),
-                          "dd MMM yyyy, HH:mm"
-                        )
-                      : "Not completed"}
-                  </span>
+
+                <h3 className="text-lg font-medium mb-1">
+                  {formatServiceType(booking.serviceTypes)}
+                </h3>
+
+                <div className="space-y-2 mt-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-500" />
+                    <span>{booking.customerName}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Wrench className="w-4 h-4 text-gray-500" />
+                    <span>
+                      {booking.technician || "Technician not assigned"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span>
+                      {booking.date} {booking.timeSlot}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span>
+                      Ends:{" "}
+                      {booking.serviceEndDate
+                        ? (() => {
+                            const date = new Date(booking.serviceEndDate);
+                            const year = date.getUTCFullYear();
+                            const month = String(
+                              date.getUTCMonth() + 1
+                            ).padStart(2, "0");
+                            const day = String(date.getUTCDate()).padStart(
+                              2,
+                              "0"
+                            );
+                            const hours = date.getUTCHours();
+                            const minutes = String(
+                              date.getUTCMinutes()
+                            ).padStart(2, "0");
+                            const ampm = hours >= 12 ? "PM" : "AM";
+                            const displayHours = hours % 12 || 12;
+                            return `${year}-${month}-${day} ${displayHours}:${minutes} ${ampm}`;
+                          })()
+                        : "Not completed"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Top Services Section */}
+      {/* Top Services */}
       <div className="relative mt-12 max-w-5xl">
-        <div className="mb-12">
-          <h2 className="text-lg font-medium mb-6 flex items-center gap-2">
-            <Star className="w-5 h-5 text-primary" />
-            Popular Services
-          </h2>
+        <h2 className="text-lg font-medium mb-6 flex items-center gap-2">
+          <Star className="w-5 h-5 text-primary" />
+          Popular Services
+        </h2>
 
+        {topServices.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">
+            No popular services yet.
+          </p>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {topServices.map((service, index) => (
               <div
@@ -336,14 +345,20 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
+        )}
 
-          {/* Technician Performance Section */}
-          <div className="mt-12">
-            <h2 className="text-lg font-medium mb-6 flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-primary" />
-              Technician Performance
-            </h2>
+        {/* Technician Performance */}
+        <div className="mt-12">
+          <h2 className="text-lg font-medium mb-6 flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-primary" />
+            Technician Performance
+          </h2>
 
+          {technicianPerformance.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              No technician stats available.
+            </p>
+          ) : (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="grid grid-cols-10 bg-gray-50 p-4 border-b border-gray-100">
                 <div className="col-span-4 font-medium text-gray-600">
@@ -376,24 +391,18 @@ const Dashboard = () => {
                       </span>
                     </div>
                   </div>
-
-                  {/* Completed Jobs */}
                   <div className="col-span-2 text-center">
                     <div className="inline-flex items-center gap-1 bg-green-50 text-green-600 px-3 py-1 rounded-full text-sm">
                       <CheckCircle className="w-4 h-4" />
                       {tech.jobsCompleted}
                     </div>
                   </div>
-
-                  {/* Pending Jobs */}
                   <div className="col-span-2 text-center">
                     <div className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-600 px-3 py-1 rounded-full text-sm">
                       <Clock className="w-4 h-4" />
                       {tech.pendingServices || tech.upcomingJobs || 0}
                     </div>
                   </div>
-
-                  {/* Points */}
                   <div className="col-span-2 text-center">
                     <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm">
                       <Target className="w-4 h-4" />
@@ -403,7 +412,7 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </>
